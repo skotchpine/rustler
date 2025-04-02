@@ -223,9 +223,6 @@ defmodule Mix.Tasks.Rustler.New do
       Code.ensure_loaded?(:json) and Kernel.function_exported?(:json, :decode, 1) ->
         data |> :json.decode() |> versions_from_parsed_json()
 
-      Code.ensure_loaded?(Jason) ->
-        data |> Jason.decode!() |> versions_from_parsed_json()
-
       true ->
         # Nasty hack: Instead of parsing the JSON, we use a regex, abusing the
         # compact nature of the returned data

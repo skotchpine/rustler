@@ -81,7 +81,7 @@ defmodule Rustler.Compiler.Config do
           raise "calling `cargo metadata` failed.\n" <> output
       end
 
-    Jason.decode!(metadata)
+    JSON.decode!(metadata)
   end
 
   defp external_resources(crate_path, crate, metadata) do
