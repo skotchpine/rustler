@@ -2,7 +2,7 @@ defmodule Rustler.Mixfile do
   use Mix.Project
 
   @source_url "https://github.com/rusterlium/rustler"
-  @version "0.36.1"
+  @version "0.36.2"
 
   def project do
     [
@@ -23,10 +23,7 @@ defmodule Rustler.Mixfile do
   end
 
   defp deps do
-    [
-      {:toml, "~> 0.7", runtime: false},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
-    ]
+    []
   end
 
   defp package do

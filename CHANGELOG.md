@@ -18,6 +18,16 @@ versions.
 
 ### Removed
 
+## 0.36.2 - 2025-06-09
+
+### Added
+
+- `std::hash::Hash` implementation for atoms (#695)
+
+### Fixed
+
+- Fix typing error in `rustler_mix` (#696, thanks @dkuku)
+
 ## 0.36.1 - 2025-02-03
 
 No changes in the Rust code, only `rustler_mix` adjustments and dependency

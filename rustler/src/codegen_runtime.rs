@@ -99,8 +99,8 @@ impl fmt::Debug for NifReturned {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
             NifReturned::BadArg => write!(fmt, "{{error, badarg}}"),
-            NifReturned::Term(ref s) => write!(fmt, "{{ok, {}}}", s),
-            NifReturned::Raise(ref s) => write!(fmt, "throw({})", s),
+            NifReturned::Term(ref s) => write!(fmt, "{{ok, {s}}}"),
+            NifReturned::Raise(ref s) => write!(fmt, "throw({s})"),
             NifReturned::Reschedule { .. } => write!(fmt, "reschedule()"),
         }
     }
@@ -138,5 +138,17 @@ where
                 }
             },
         }
+    }
+}
+
+pub const fn min_erts() -> &'static [u8] {
+    if cfg!(feature = "nif_version_2_17") {
+        b"OTP-26.0\0"
+    } else if cfg!(feature = "nif_version_2_16") {
+        b"OTP-24.0\0"
+    } else if cfg!(feature = "nif_version_2_15") {
+        b"OTP-22.0\0"
+    } else {
+        b"OTP-21.0\0"
     }
 }

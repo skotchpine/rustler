@@ -236,6 +236,32 @@ impl Drop for OwnedBinary {
 unsafe impl Send for OwnedBinary {}
 unsafe impl Sync for OwnedBinary {}
 
+impl FromIterator<u8> for OwnedBinary {
+    fn from_iter<T: IntoIterator<Item = u8>>(iter: T) -> Self {
+        let mut iter = iter.into_iter();
+        let (lower, upper) = iter.size_hint();
+        let mut bin = OwnedBinary::new(upper.unwrap_or(lower)).expect("Allocation failed");
+        let mut i = 0;
+        loop {
+            match iter.next() {
+                None => {
+                    if bin.len() != i {
+                        bin.realloc_or_copy(i);
+                    }
+                    return bin;
+                }
+                Some(x) => {
+                    if bin.len() <= i {
+                        bin.realloc_or_copy(i + i / 2 + 1);
+                    }
+                    bin.as_mut_slice()[i] = x;
+                    i += 1;
+                }
+            }
+        }
+    }
+}
+
 /// An immutable smart-pointer to an Erlang binary.
 ///
 /// See [module-level doc](index.html) for more information.
@@ -248,6 +274,7 @@ pub struct Binary<'a> {
 
 impl<'a> Binary<'a> {
     /// Consumes `owned` and returns an immutable `Binary`.
+    #[inline]
     pub fn from_owned(owned: OwnedBinary, env: Env<'a>) -> Self {
         // We are transferring ownership of `owned`'s data to the
         // environment. Therefore, we need to prevent `owned`'s destructor being
@@ -269,6 +296,7 @@ impl<'a> Binary<'a> {
     ///
     /// If allocation fails, an error will be returned.
     #[allow(clippy::wrong_self_convention)]
+    #[inline]
     pub fn to_owned(&self) -> Option<OwnedBinary> {
         OwnedBinary::from_unowned(self)
     }
@@ -278,6 +306,7 @@ impl<'a> Binary<'a> {
     /// # Errors
     ///
     /// If `term` is not a binary, an error will be returned.
+    #[inline]
     pub fn from_term(term: Term<'a>) -> Result<Self, Error> {
         let mut binary = MaybeUninit::uninit();
         if unsafe {
@@ -315,6 +344,7 @@ impl<'a> Binary<'a> {
     /// # Errors
     ///
     /// If `term` is not an `iolist`, an error will be returned.
+    #[inline]
     pub fn from_iolist(term: Term<'a>) -> Result<Self, Error> {
         let mut binary = MaybeUninit::uninit();
         if unsafe {
@@ -338,11 +368,13 @@ impl<'a> Binary<'a> {
 
     /// Returns an Erlang term representation of `self`.
     #[allow(clippy::wrong_self_convention)]
+    #[inline]
     pub fn to_term<'b>(&self, env: Env<'b>) -> Term<'b> {
         self.term.in_env(env)
     }
 
     /// Extracts a slice containing the entire binary.
+    #[inline]
     pub fn as_slice(&self) -> &'a [u8] {
         unsafe { ::std::slice::from_raw_parts(self.buf, self.size) }
     }
@@ -355,6 +387,7 @@ impl<'a> Binary<'a> {
     /// # Errors
     ///
     /// If `offset + length` is out of bounds, an error will be returned.
+    #[inline]
     pub fn make_subbinary(&self, offset: usize, length: usize) -> NifResult<Binary<'a>> {
         let min_len = length.checked_add(offset);
         if min_len.ok_or(Error::BadArg)? > self.size {
@@ -452,28 +485,33 @@ pub struct NewBinary<'a> {
 
 impl<'a> NewBinary<'a> {
     /// Allocates a new `NewBinary`
+    #[inline]
     pub fn new(env: Env<'a>, size: usize) -> Self {
         let (buf, term) = unsafe { new_binary(env, size) };
         NewBinary { buf, term, size }
     }
     /// Extracts a slice containing the entire binary.
+    #[inline]
     pub fn as_slice(&self) -> &[u8] {
         unsafe { ::std::slice::from_raw_parts(self.buf, self.size) }
     }
 
     /// Extracts a mutable slice of the entire binary.
+    #[inline]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         unsafe { ::std::slice::from_raw_parts_mut(self.buf, self.size) }
     }
 }
 
 impl<'a> From<NewBinary<'a>> for Binary<'a> {
+    #[inline]
     fn from(new_binary: NewBinary<'a>) -> Self {
         Binary::from_term(new_binary.term).unwrap()
     }
 }
 
 impl<'a> From<NewBinary<'a>> for Term<'a> {
+    #[inline]
     fn from(new_binary: NewBinary<'a>) -> Self {
         new_binary.term
     }
@@ -481,11 +519,13 @@ impl<'a> From<NewBinary<'a>> for Term<'a> {
 
 impl Deref for NewBinary<'_> {
     type Target = [u8];
+    #[inline]
     fn deref(&self) -> &[u8] {
         self.as_slice()
     }
 }
 impl DerefMut for NewBinary<'_> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
         self.as_mut_slice()
     }
